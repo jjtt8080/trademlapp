@@ -2,7 +2,6 @@ var unirest = require("unirest");
 const api_key = require('./api_key.json')["FINN_API_KEY"]
 const WebSocket = require('ws')
 const socket_const = require('../sockets/socket_constants')
-
 function GetStockCandle(symbol, resolution, ws,callback) {
   const req = unirest("GET", "https://finnhub.io/api/v1/stock/candle");
   console.log("symbol:",symbol)
@@ -21,9 +20,12 @@ function GetStockCandle(symbol, resolution, ws,callback) {
     "token": api_key
   }));
   req.end(function (res) {
-  	if (res.error) throw new Error(res.error);
+  	if (res.error) {
+      console.error("res.error")
+    }
+   var result = {type: socket_const.PRICE_HISTORY, result: res.body}   
     //console.log("reswponse for getStockCandle", res.body)
-  	callback(ws, JSON.stringify(res.body));
+  	callback(ws, JSON.stringify(result));
   });
 }
 
@@ -51,12 +53,11 @@ function UnsubscribeStock(symbols){
     }
   }
 }
-
 module.exports = {
   FinnFunctions: function(type, params, ws, callback) {
-    if (type == socket_const.PRICE_HISTORY) {
+    if (type === socket_const.PRICE_HISTORY) {
       GetStockCandle(params.SYMBOL, params.RESOLUTION, ws,callback);
-    }else if (type == socket_const.REALTIME_QUOTE) {
+    }else if (type === socket_const.REALTIME_QUOTE) {
       return SubscribeToStock(params[socket_const.SYMBOL], ws, callback)
     }else {
       throw Err("Unknown type specified", type)

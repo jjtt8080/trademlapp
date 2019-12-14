@@ -1,157 +1,170 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {Button} from 'antd';
-import "antd/dist/antd.css";
+import 'antd/dist/antd.css';
+import './MyLayout.css';
 import {connect} from "react-redux";
-import {Layout, Menu, Breadcrumb, Icon } from 'antd';
+import {Layout, Menu, Breadcrumb, Icon, Dropdown} from 'antd';
 import {StockCharts} from './StockChart.js';
 import {Watchlists} from './Watchlist.js'
-import {store} from '../redux/store/index.js';
-import {initialState, CONNECT} from '../redux/constants/index.js'
-import {Provider} from 'react-redux';
+import {OptionChains} from './OptionChain.js'
+import {OptionStatistics} from './OptionStats.js'
+import {initialState} from '../redux/constants/index.js'
 import {mapStateToProps, mapDispatchToProps} from './ReduxMapping.js'
+import { Typography } from 'antd';
+import {WatchListManaged, WatchListBrowsed} from './WatchListManage';
+const { Title } = Typography;
 const  {SubMenu } = Menu;
 const  {Header, Content, Sider} = Layout;
-const g_MenuItem = ['Charts', 'WatchLists', 'Markets']
+const g_MenuItem = ['Quotes', 'WatchLists', 'Markets', 'OptionStats'];
+
+
+const getIconType = function(key) {
+
+    if (key.m === 'Stock')
+        return <Icon type="stock" />
+    else if (key.m === 'Option')
+        return <Icon type="sliders" />
+    else if (key.m === 'Quotes')
+        return <Icon type="database" theme="filled" />
+    else if (key.m === 'WatchLists')
+        return <Icon type="experiment" theme="filled" />
+    else
+        return <Icon type="line-chart" />
+}
+const getTitle = function(m) {
+    return <span> {getIconType({m})} <span>{m}</span> </span>
+}
 class MyLayout extends React.Component {
-
-  constructor(props) {
-    super(props);
-    //this.state = {browserHistory: []};
-    // This binding is necessary to make `this` work in the callback
-    this.state = initialState;
-    store.dispatch({
-      type: CONNECT,
-      state : {
-        stock_list: Array(),
-        value: 'initial_value',
-        isConnected: false,
-        socket: null}
-    })
-    this.selectedMenu = 'Charts';
-    this.displayMenus = this.displayMenus.bind(this);
-    this.displayContent = this.displayContent.bind(this);
-    this.setPageMenu = this.setPageMenu.bind(this);
-  }
-  setPageMenu(key){
-    console.log("setPageMenu", key)
-    if (this.selectedMenu !== key) {
-      this.selectedMenu = key;
-      this.props.onClickPage(this.selectedMenu);
+    constructor(props) {
+        super(props);
+        //this.state = {browserHistory: []};
+        // This binding is necessary to make `this` work in the callback
+        this.state = initialState;
+        this.selectedMenu = 'Quotes.Stock';
+        this.getSubMenuItems = this.getSubMenuItems.bind(this);
+        this.displayMenus = this.displayMenus.bind(this);
+        this.displaySubMenu = this.displaySubMenu.bind(this);
+        this.displayBrowseHistory = this.displayBrowseHistory.bind(this);
+        this.displayContent = this.displayContent.bind(this);
+        this.setPageMenu = this.setPageMenu.bind(this);
+        this.url = new URL(window.location.href);
+        console.log("MyLayout constructor", this.url.searchParams.get("symbol"), this.url.searchParams.get("resolution"))
+        if (this.url.searchParams.get("symbol") !== null)
+            this.state.value = this.url.searchParams.get("symbol");
+        if (this.url.searchParams.get("resolution") !== null)
+            this.state.resolution = this.url.searchParams.get("resolution")
+         console.log("MyLayout constructor", this.state)
+        this.watchlists = ['Default'];
+        this.state.watchlists_dirty = true;
+        
     }
-  }
-  displayContent(m) {
-    console.log("current key", m)
-    if (m === 'Charts') {
-      return <StockCharts state={this.state}/>
-    } else if (m === 'WatchLists') {
-      console.log("selected watch list", this.state)
-      return <Watchlists  state={this.state}/>
-    } else {
-      return <StockCharts state={this.state}/>
+
+    getSubMenuItems(m) {
+        if (m === 'Quotes')
+            return   ['Stock', 'Option'];
+        else if (m.startsWith('WatchLists')) {
+            return ['Browse', 'Manage'];
+        }else if (m === 'Markets')
+            return ['S&P', 'QQQ', 'DowJones', 'IWM', 'USO'];
+        else if (m === 'OptionStats')
+            return ['Overall', 'Detail']
+        else return ["Unknown"]
     }
-  }
-
-  displayMenus(m) {
-    var menuItems = g_MenuItem.map(function(m){
-      return <Menu.Item key={m}> {m} </Menu.Item>
-    }.bind(this));
-    return menuItems;
-  }
-
-  render() {
-    return (
-
-      <Layout id="LayoutHeader1">
-      <Header className="header">
-        <div className="logo" />
-        <Menu id="pageMenu"
-          theme="dark"
-          mode="horizontal"
-          defaultSelectedKeys={['Charts']}
-          style={{ lineHeight: '64px' }}
-          onClick={e=>{this.setPageMenu(e.key)}}
-        >
-        {this.displayMenus()}
-        </Menu>
-      </Header>
-      <Layout id="Sider1">
-      <Sider width={200} style={{ background: '#fff' }}>
-      <Menu
-        mode="inline"
-        theme="light"
-        defaultSelectedKeys={['1']}
-        defaultOpenKeys={['Fidelity']}
-        style={{ height: '100%', borderRight: 0 }}
-      >
-      <SubMenu
-        key="P-Equity"
-        title={
-          <span>
-            <Icon type="user" />
-            Equity
-          </span>
+    setPageMenu(key){
+        if (this.selectedMenu !== key) {
+            this.selectedMenu = key;
+            this.props.onClickPage(this.selectedMenu);
         }
-      >
-        <Menu.Item key="1">Fidelity</Menu.Item>
-        <Menu.Item key="2">Interactive Broker</Menu.Item>
-        <Menu.Item key="3">TDAmeritrade</Menu.Item>
-        <Menu.Item key="4">Vanguard</Menu.Item>
-        <Menu.Item key="5">Etrade</Menu.Item>
-      </SubMenu>
-      <SubMenu
-        key="P-forex"
-        title={
-          <span>
-            <Icon type="laptop" />
-            Forex
-          </span>
+    }
+    displayContent(m) {
+        if (m === 'Quotes.Stock') {
+            return <StockCharts state={this.state}/>
+        } else if (m === 'Quotes.Option') {
+            return <OptionChains state={this.state}/>
+        } else if (m.startsWith('WatchLists.Manage')) {
+            return <WatchListManaged state={this.state}/>
+        }else if (m.startsWith('WatchLists.Browse')){
+            return <WatchListBrowsed state={this.state}/>
+        } else if (m.startsWith('Markets')){
+            console.log("this state in displayContent in MyLayout", this.props.page)
+            return <StockCharts state={this.state} value={this.state.value}/>
+        } else if (m.startsWith('OptionStats')) {
+            return <OptionStatistics state={this.state}/>
+        } else { 
+            console.error("strange");
+            return <StockCharts state={this.state}/>
         }
-      >
-        <Menu.Item key="6">IG.com</Menu.Item>
-        <Menu.Item key="7">TD Ameritrade</Menu.Item>
-        <Menu.Item key="8">Forex.com</Menu.Item>
-      </SubMenu>
-      <SubMenu
-        key="P-Bond"
-        title={
-          <span>
-            <Icon type="notification" />
-            Bond
-          </span>
-        }
-      >
-      <Menu.Item key="9">401K</Menu.Item>
-      <Menu.Item key="10">Vanguard</Menu.Item>
-      </SubMenu>
-      </Menu>
-      </Sider>
-      <Layout style={{ padding: '0 24px 24px' }}>
-        <Breadcrumb id="BrowserHist" style={{ margin: '16px 0' }}>
-          <Breadcrumb.Item>Home</Breadcrumb.Item>
-          <Breadcrumb.Item>List</Breadcrumb.Item>
-          <Breadcrumb.Item>App</Breadcrumb.Item>
-        </Breadcrumb>
-        <Content name="ContentPanel1"
-          style={{
-            background: '#b7eb8f',
-            padding: 12,
-            margin: 0,
-            minHeight: 350,
-            fontsize: 12
-          }}
-        >
-        <div id="content1">
-        {this.displayContent(this.props.page)}
-        </div>
-        </Content>
-      </Layout>
-      </Layout>
-     </Layout>
-  );
-  }
+    }
+    displaySubMenu(m) {
+        var menuItems = this.getSubMenuItems(m).map(function(s){
+            return <Menu.Item key={m + '.' + s} title={getTitle(s)}>{getTitle(s)}</Menu.Item>
+        }.bind(this));
+        return menuItems;
+    }
+    displayMenus() {
+        var menuItems = g_MenuItem.map(function(m){
+            return <SubMenu key={m} title={getTitle(m)} > {this.displaySubMenu(m)}
+            </SubMenu>
+        }.bind(this));
+        return menuItems;
+    }
+    displayBrowseHistory() {
+        return (
+                <Breadcrumb id="BrowserHist" style={{ margin: '8px 8px', color:"black"}}>
+                <Breadcrumb.Item>Home</Breadcrumb.Item>
+                <Breadcrumb.Item>{this.selectedMenu}</Breadcrumb.Item>
+                </Breadcrumb>
+        );
+    }
+    showPopup(){
+        
+    }
+    render() {
+        return (
+                <Layout id="LayoutHeader1">
+                <Header style={{ background:"black"}}>
+                <div>
+                <Title level={2} style={{color:"snow"}}>
+                TradeML <span><span><Icon type="home"/></span>
+                <Menu mode="horizontal" style={{lineHeight:"60px", float:"right",color:"snow",background:"black", padding:"true", fontsize:"12px"}}>
+                <Menu.Item key="home" onClick={e=>{this.setPageMenu(e.key)}}> home </Menu.Item>
+                <Menu.Item key="settings" onClick={e=>{this.setPageMenu(e.key)}}> settings </Menu.Item>
+                </Menu>
+                </span>
+                </Title>
+                </div>
+
+            </Header>
+                <Layout>
+                <Sider collapsible style={{background: 'black', padding:'false'}}>
+                <Menu id="pageMenu" theme="dark"
+                   mode="inline" defaultSelectedKeys={['Charts']}
+                   style={{ lineHeight: '64px' }}
+                   onClick={e=>{this.setPageMenu(e.key)}}>
+                {this.displayMenus()}
+                </Menu>
+
+                </Sider>
+                <Content name="ContentPanel1"
+            style={{
+                background: '#b7eb8f',
+                padding: 12,
+                margin: 0,
+                minHeight: 400,
+                fontsize: 12
+            }}
+                >
+                {this.displayBrowseHistory()}
+                <div id="content1">
+                {this.displayContent(this.props.page)}
+            </div>
+                </Content>
+                </Layout>
+                </Layout>
+        );
+    }
 }
 
 const Layouts = connect(mapStateToProps, mapDispatchToProps)(MyLayout);
-console.log(Layouts)
-//stockCharts.propTypes = StateObj;
+
 export {Layouts}

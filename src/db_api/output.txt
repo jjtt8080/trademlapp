@@ -1,0 +1,5 @@
+/home/jane/python/tradeML/data//historical//loki/2014.csv
+optionstats
+trying to import /home/jane/python/tradeML/data//historical//loki/2014.csv to  optionstats , current row count 0
+# of tables in the db 0
+after insert, current row count 19492

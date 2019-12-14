@@ -3,7 +3,7 @@ const http = require('http')
 const url = require('url')
 const WebSocket = require('ws')
 const cors = require('cors')
-const finn_api = require('../trade_api/finn_api')
+const trade_api = require('../trade_api/index')
 const app = express();
 app.use(cors())
 
@@ -42,7 +42,7 @@ wss.on('connection', function connection(ws) {
     console.log('received: %s', message);
     messageJson = JSON.parse(message);
     if (messageJson.hasOwnProperty("type") & messageJson.hasOwnProperty("params")) {
-      finn_api.FinnFunctions(messageJson.type, messageJson.params, ws,callbackToClient)
+      trade_api.TradeFunctions(messageJson.type, messageJson.params, ws,callbackToClient)
     }else {
       ws.send(message);
       console.log("finish echoing back")
