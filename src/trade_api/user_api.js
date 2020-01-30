@@ -8,6 +8,7 @@ function GetWatchListByName(watch_list_name) {
         if (fs.existsSync(watchlistFileName)) {
             var watchFileObj = fs.readFileSync(watchlistFileName);
             var jsonObj = JSON.parse(watchFileObj)
+            console.log("watchlistFileName Obj", JSON.stringify(jsonObj));
             var resultObj = {type: socket_const.GET_WATCHLIST_BYNAME, result: jsonObj}
             return resultObj;
         }
@@ -69,7 +70,10 @@ module.exports = {
     WatchListFuncs: function(type, params, ws, callback) {
       if (type === socket_const.GET_WATCHLIST_BYNAME){
           var watchlist = GetWatchListByName(params["WATCH_LIST_NAME"]);
-           callback(ws, JSON.stringify(watchlist));
+          if (callback !== null)
+            callback(ws, JSON.stringify(watchlist));
+          else
+              return watchlist;
        }else if (type === socket_const.GET_WATCH_LISTS) {
            var watchlists = GetWatchLists();
            callback(ws, JSON.stringify(watchlists));

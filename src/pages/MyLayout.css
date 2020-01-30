@@ -1,0 +1,9 @@
+.header {
+    background: "white";
+    color: "blue"               
+}
+.title {
+    color: white;
+    margin: '24px 16px';
+    float: center
+}

@@ -16,6 +16,7 @@ const { Option } = Select;
 const fieldNames =  ['strike', 'totalVolume', 'openInterest'];
 const priceFieldNames = ['strike', 'lowPrice', 'openPrice', 'mark', 'highPrice'];
 const chgFieldNames = ['strike', 'netChange', 'delta', 'theta']
+const ivFields = ['strike', 'volatility']
 
 class OptionChain extends React.Component {
         constructor(props){
@@ -69,7 +70,10 @@ class OptionChain extends React.Component {
          } else if (this.state.selected_fields !== chgFieldNames & value === "PriceChg") {
              this.state.selected_fields = chgFieldNames;
              this.handleSelectDate(this.props.state.expr_date);
-         }
+         } else if (this.state.selected_fields !== ivFields & value === "IV") {
+            this.state.selected_fields = ivFields;
+            this.handleSelectDate(this.props.state.expr_date);
+        }
      }
 	 renderExprDate(input) {
 		  var options = ['default']
@@ -129,6 +133,8 @@ class OptionChain extends React.Component {
                              <Option key="V_OI">Vol OI</Option>
                              <Option key="Price">Price</Option>
                              <Option key="PriceChg">Chg</Option>
+                             <Option key="IV">IV</Option>
+                             
                         </Select>
                     </div>
                 </Col>

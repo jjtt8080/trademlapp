@@ -22,7 +22,11 @@ function generateSingleFilterExpr(f){
         if(f.hasOwnProperty(prop)) {
             var propName = prop
             var retObj = {}
-            retObj[propName] = f[prop]
+            if (Array.isArray(f[prop])) {
+                retObj[propName] =  {$in : f[prop]}
+            }else {
+                retObj[propName] = f[prop]
+            }
             $and.push(retObj)
         }
     }
@@ -43,6 +47,19 @@ function generateFilterExpr(filterCond) {
         return {$or}
     }
 }
+function makeFieldNameForMeasure(c) {
+    var retV = ""
+    var keys = Object.keys(c);
+    keys.forEach(k=>{
+        var value = JSON.stringify(c[k]);
+        value = value.replace("\"", "");
+        value = value.replace("$", "");
+        value = value.replace("\"", "");
+        retV = k.substr(1, k.length-1)+ "_" + value;
+    })
+    return retV
+
+}
 function  generateAggrColumns(projectionAttrs, projectionMeasures, filter) {
     var $group = {}
     var idColumns = {};
@@ -61,10 +78,10 @@ function  generateAggrColumns(projectionAttrs, projectionMeasures, filter) {
     $addFields = {}
     if (projectionMeasures.length > 0) {
         projectionMeasures.forEach(c=>{
-            var value = c
-            value = "$".concat(value);
-            var accValue = {$avg : value}
-            var fieldName = "avg_".concat(c) 
+            //var value = c
+            //value = "$".concat(value);
+            var accValue = c
+            var fieldName = makeFieldNameForMeasure(c)
             $group[fieldName] = accValue
             $project[fieldName] = 1
             var roundField = "$".concat(fieldName)
@@ -83,7 +100,7 @@ function  generateAggrColumns(projectionAttrs, projectionMeasures, filter) {
     console.log(JSON.stringify(pipeline))
     return pipeline;
 }
-function queryDb(queryType, tableName, distinct, projectionAttrs, projectionMeasures, filter, ws, callback) {
+function queryDb(queryType, tableName, distinct, projectionAttrs, projectionMeasures, filter, sortSpec, ws, callback) {
     MongoClient.connect(url, function(err, client){
       
         if(err) { return console.dir(err); }
@@ -118,7 +135,13 @@ function queryDb(queryType, tableName, distinct, projectionAttrs, projectionMeas
             } else {
                 cursor = db.collection(tableName).aggregate(generateAggrColumns(projectionAttrs, projectionMeasures, filter), {cursor:{batchSize:1000}})
                 //Need to unwrap
-                cursor.toArray().then(function(r){
+                array = null;
+                if (sortSpec !== null) {
+                    array = cursor.sort(sortSpec).toArray()
+                }else {
+                    array = cursor.toArray();
+                }
+                array.then(function(r){
                     var finalObj =  {type: queryType, result: r};
                     console.log("finalObj", r[0])
                     callback(ws,JSON.stringify(finalObj));                         
@@ -132,7 +155,9 @@ function queryDb(queryType, tableName, distinct, projectionAttrs, projectionMeas
     });
 }
 
-
+function queryWatchListSymbols(watch_list_name) {
+    user_api.WatchListFuncs()
+}
 module.exports = {
      DbFunctions : function(type, params, ws, callback) {
         var tableName = params.tablename;
@@ -140,7 +165,9 @@ module.exports = {
         var projectionMeasures = params.projectionMeasures;
         var distinct = params.distinct;
         var filter = params.filter;
-        var r = queryDb(type, tableName, distinct, projectionAttrs, projectionMeasures, filter, ws, callback);
+        var watch_list_name = params.watch_list_name;
+        var sortspec = params.sortSpec
+        var r = queryDb(type, tableName, distinct, projectionAttrs, projectionMeasures, filter, sortspec, ws, callback);
         
         
     }

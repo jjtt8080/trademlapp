@@ -1,6 +1,7 @@
 const socket_const = require('../sockets/socket_constants')
 const loki_api = require('./loki_api')
 const mongo_api = require('./mongo_api')
+
 module.exports = {
    DbFunctions: function(type, params, ws, callback) {
    if (type === socket_const.OPTION_STATS || type === socket_const.OPTION_STATS_FIELDS) {

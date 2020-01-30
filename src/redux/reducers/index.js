@@ -88,7 +88,7 @@ function rootReducer(state=initialState, action) {
                     {WATCH_LIST_NAME: s.watch_list_name, SYMBOL: s.stock_list, ACTION: s.action}, s.callback);
         return Object.assign({}, state,{
             stock_list: s.stock_list,
-            atchlists_dirty: true
+            watchlists_dirty: true
         });
     }else if (action.type === OPTION_STATS_FIELDS_BR) {
         //console.log("s", s)

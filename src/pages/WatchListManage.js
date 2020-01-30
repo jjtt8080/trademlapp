@@ -16,13 +16,14 @@ const { Search } = Input;
 class WatchlistDropdown extends React.Component{
     constructor(props){
         super(props);
-        console.log("watchlistdropdown constructor ", props.state.watchlists_dirty, this.props.watchlists)
+        console.log("watchlistdropdown constructor ", props.watchlists_dirty, this.props.watchlists)
+       
         this.displayMenus = this.displayMenus.bind(this);
         this.getWatchLists = this.getWatchLists.bind(this);
         this.displayWatchLists = this.displayWatchLists.bind(this);
         this.manageClick = this.manageClick.bind(this);
         this.watchlists = this.props.watchlists;
-        this.state = {checked : !props.state.watchlists_dirty};
+        this.state = {checked : false,  watchlists_dirty : props.watchlists_dirty};
         if (this.props.page === 'WatchLists.Manage' )
             this.state.showResult = false;
         else
@@ -41,8 +42,8 @@ class WatchlistDropdown extends React.Component{
         }
     }
     componentDidUpdate(prevProps, prevState, snapshot) {
-        //console.log("WatchlistDropdown component will receive props", props.watchlists, this.watchlists);
-        if (prevState.checked === true && this.state.watchlists_dirty) {
+        console.log("WatchlistDropdown componentdid update", prevProps.watchlists, this.watchlists, prevState.checked, this.state.watchlists_dirty, this.props.watch_list_name, prevProps.watch_list_name);
+        if (this.state.checked === true && this.state.watchlists_dirty) {
             this.getWatchLists();
             this.setState({ checked: false });
         }
@@ -56,6 +57,7 @@ class WatchlistDropdown extends React.Component{
             this.props.onGetWatchListByName(newState)
         }
     }
+    
     displayMenus() {
         var menuItems = this.watchlists.map(function(m){
             return <Menu.Item key={m} title={m} onClick={e=>{this.manageClick(e.key)}}>{m}</Menu.Item>

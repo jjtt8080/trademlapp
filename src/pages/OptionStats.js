@@ -44,7 +44,30 @@ const treeData = [
 ];
 
 
-const expiration_year = ['2014', '2015', '2016', '2017', '2018', '2019']
+const expiration_year = ['2014', '2015', '2016', '2017', '2018', '2019'];
+
+const optionstat_proj = ["year","month","symbol"];
+const optionstat_meas = [{"$avg": "$median_iv_call"},
+        {"$avg": "$median_iv_put"},  
+        {"$avg": "$max_vol_call"},
+        {"$avg":"$max_vol_put"}, 
+        {"$avg": "$mean_oi_call"},
+        {"$avg": "$mean_oi_put"}];
+
+// Keep this in sync with db_api mongo_api 
+function makeFieldNameForMeasure(c) {
+    var retV = ""
+    var keys = Object.keys(c);
+    keys.forEach(k=>{   
+        var value = JSON.stringify(c[k]);
+        value = value.replace("\"", "");
+        value = value.replace("$", "");
+        value = value.replace("\"", "");
+        retV = k.substr(1, k.length-1)+ "_" + value;
+    })
+    return retV
+
+} 
 class OptionStats extends React.Component {
         constructor(props){
         super(props);
@@ -53,24 +76,55 @@ class OptionStats extends React.Component {
         this.displayResponse = this.displayResponse.bind(this);
         this.renderWatchList = this.renderWatchList.bind(this);
         this.action_type = OPTION_STATS_BR;
-        this.state = { queryObj: undefined, optionStatsTree: undefined, renderedTreeData: [], treeValue: [], 
-                      watchlists: this.props.watchlists,  watch_list_name: undefined, 
+        var meas_titles = optionstat_meas.map(k=>{
+            return makeFieldNameForMeasure(k);
+        })
+        var column_titles = optionstat_proj.concat(meas_titles);
+        this.state = { optionQueryObj: undefined, optionStatsTree: undefined, renderedTreeData: [], treeValue: [], 
+                      watchlists: this.props.watchlists,  watch_list_name: undefined, stock_lists: [],
                       optionStatsData: undefined, chartType: 'LineChart',
-                      columns_title: ['year', 'month', 'symbol', 'avg_calliv','avg_putiv','avg_meaniv','avg_callvol','avg_putvol','avg_calloi','avg_putoi']};
+                      columns_title: column_titles};
     }
     componentDidMount() {
         if (this.state.symbols === undefined)
             this.getOptionStatsFields()
+        this._isMounted = true;
+    }
+    componentWillUnmount() {
+        this._isMounted = false;
+    }
+    
+    shouldComponentUpdate(nextProp, nextState) {
+        if (this.state.watch_list_name != nextProp.watch_list_name) {
+            console.log("watch_list_name", this.state.watch_list_name, nextProp.watch_list_name, nextState.watch_list_name)
+            this.state.watch_list_name = nextProp.watch_list_name;
+            this.state.optionStatsData = undefined; 
+            return true;
+        }
+        if (this.state.treeValue !== nextProp.treeValue) {
+            return true;
+        }
+        return false;
+    }
+    componentDidUpdate(prevProps, prevState, snapshot){
+         console.log("OptionStats componentdid update",this.props.watchlists_dirty, this.props.watch_list_name, prevProps.watch_list_name);
+        if (this.props.watchlists_dirty === false && prevProps.watch_list_name !== this.props.watch_list_name) {
+            this.setState({watchlists_dirty: true})
+            this.getOptionStats(this.state.treeValue)
+        }
     }
     getOptionStats(value) {
         var filterVal = ConvertToObj(value, ["year", "month"])
-        var newState = { watch_list_name: this.props.watch_list_name, 
+        var newState = { 
                         optionQueryObj: {tablename: "optionstats", 
-                                         projectionAttrs:["year","month","symbol"], 
-                                         projectionMeasures:["calliv", "putiv", "meaniv", "callvol", "putvol", "calloi", "putoi"],
-                                         filter:filterVal},
+                                         projectionAttrs:optionstat_proj, 
+                                         projectionMeasures: optionstat_meas,
+                                         filter:filterVal,
+                                         sortSpec:{"symbol": 1, "year": 1, "month":1},
+                                        WATCH_LIST_NAME: this.state.watch_list_name},
                         callback: this.displayResponse};
          console.log("getting optionstats", JSON.stringify(newState))
+        
         this.props.onGetOptionStats(newState);
     }
     onChange = value => {
@@ -92,8 +146,7 @@ class OptionStats extends React.Component {
     }
     getOptionStatsFields = () => {
         if (this.state.symbols === undefined) {
-            var newState = {optionQueryObj: {tablename: "optionstats", projectionAttrs:["year","month"], projectionMeasures:[], distinct:true},
-                                callback: this.populateDate}
+            var newState = {optionQueryObj: {tablename: "optionstats", projectionAttrs:["year","month"], projectionMeasures:[], distinct:true,  sortSpec:{"year": 1, "month":1}},callback: this.populateDate}
             this.props.onGetOptionStatsFields(newState)
         }
     }
@@ -112,10 +165,7 @@ class OptionStats extends React.Component {
             }
         }
     }
-   
-   
-   
-	 renderWatchList() {
+    renderWatchList() {
         var options = this.props.watchlists.map(function(y) {
              return <Option key={y} value={y}>{y}</Option>
         }.bind(this));
@@ -131,11 +181,11 @@ class OptionStats extends React.Component {
 		  
 	 }
      renderTreeData = () => {
-         console.log("render tree data", this.state.optionStatsTree);
+         //console.log("render tree data", this.state.optionStatsTree);
          if (this.state.optionStatsTree !== undefined) {
             this.state.renderedTreeData = []
             this.state.renderedTreeData = this.state.optionStatsTree.toTreeData(this.state.renderedTreeData)
-             console.log("renderTreeData", this.state.renderedTreeData);
+             //console.log("renderTreeData", this.state.renderedTreeData);
             return  (this.state.renderedTreeData);
          } else {
             return [{id: "default", key: "default", value: "default", isLeaf: true}]

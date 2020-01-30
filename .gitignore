@@ -21,3 +21,17 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+trade_api/*.json
+*.json
+*.csv
+python/*
+python
+data/*
+*~
+*#
+.env
+.eslintcache
+src/index1.js
+src/react-app-env.d.ts
+
+src/trade_api/api_key.json

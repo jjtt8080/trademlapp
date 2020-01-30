@@ -7,6 +7,7 @@ const WebSocket = require('ws')
 const socket_const = require('../sockets/socket_constants')
 const access_token_obj = require('../python/tradeML/trade_api/tmp/access_token.json')
 const db_api = require('../db_api/index')
+const user_api = require('./user_api')
 
 function GetPriceHistory(symbol, ws, callback) {
     var token = access_token_obj["access_token"]
@@ -69,6 +70,22 @@ function GetOptionChain(symbol, ws, callback){
 
     
 }
+function AddToFilter(params, watchlists) {
+    if (params.filter !== null) {
+        if (Array.isArray(params.filter)) {
+            params.filter.forEach(function(obj){
+                obj.symbol = watchlists;
+            })
+        } else {
+            params.filter = {"symbol" : watchlists};
+        }
+    }
+    else {
+        params.filter = {"symbol" : watchlists }
+    }
+    console.log(JSON.stringify(params));
+    return params;
+}
 module.exports = {
   TdFunctions: function(type, params, ws, callback) {
     if (type === socket_const.REALTIME_QUOTE) {
@@ -76,6 +93,15 @@ module.exports = {
     }else if (type === socket_const.OPTION_CHAIN){
         GetOptionChain(params.SYMBOL, ws, callback);
     }else if (type === socket_const.OPTION_STATS || type === socket_const.OPTION_STATS_FIELDS){
+        var watchlists = null;
+        console.log("watch_list_name", params["WATCH_LIST_NAME"]);
+        if (params["WATCH_LIST_NAME"] !== undefined) {
+            var watchlists_result =  user_api.WatchListFuncs(socket_const.GET_WATCHLIST_BYNAME, params,null, null);
+            console.log("watchlists", watchlists_result)
+            var watchlists = watchlists_result.result[params["WATCH_LIST_NAME"]]
+            if (watchlists !== null)
+                params = AddToFilter(params, watchlists)
+        }
         db_api.DbFunctions(type, params, ws, callback);
     }else {
       console.error("Unknown type specified in td_api", type)
