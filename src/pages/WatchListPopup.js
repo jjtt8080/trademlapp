@@ -1,12 +1,11 @@
-import React, { Component } from 'react';
-import ReactDOM from 'react-dom';
+import React from 'react';
 import { connect } from "react-redux";
-import { Input, Dropdown, Menu, Popover, Card, List } from 'antd';
+import { Popover } from 'antd';
 import { CustomizedForm } from './CustomizedForm'
-import { mapStateToProps, mapDispatchToProps, isEmpty, verifyServerResponse } from './ReduxMapping.js'
+import { mapStateToProps, mapDispatchToProps} from './ReduxMapping.js'
 import "antd/dist/antd.css";
 import { Watchlists } from './Watchlist' 
-import { Button, Icon} from 'antd';
+import { Button} from 'antd';
 
 class WatchListPopup extends React.Component
 {

@@ -1,7 +1,7 @@
 import { CONNECT, ADD_STOCK, REMOVE_STOCK, DISPLAY_RESPONSE,OPTION_CHAIN_BR, CLICK_PAGE,GET_QUOTE, UPDATE_WATCH_LIST_BR, GET_WATCH_LISTS_BR, GET_WATCHLIST_BYNAME_BR,DISPLAY_WATCHLISTS , OPTION_STATS_BR, OPTION_STATS_FIELDS_BR} from '../constants/index';
 import {initialState} from '../constants/index'
 import {sendRequest, getSocketState, getSocket} from '../../sockets/socketclient'
-import {SOCKET_OPEN, SOCKET_CLOSE, SOCKET_ERROR, SOCKET_UNKNOWNSTATE, PRICE_HISTORY,OPTION_CHAIN, REALTIME_QUOTE, UPDATE_WATCH_LIST, GET_WATCH_LISTS, GET_WATCHLIST_BYNAME, OPTION_STATS, OPTION_STATS_FIELDS} from '../../sockets/socket_constants'
+import {SOCKET_OPEN, SOCKET_CLOSE, SOCKET_ERROR, SOCKET_UNKNOWNSTATE, PRICE_HISTORY,OPTION_CHAIN, REALTIME_QUOTE,UNSUBSCRIBE_QUOTE, UPDATE_WATCH_LIST, GET_WATCH_LISTS, GET_WATCHLIST_BYNAME, OPTION_STATS, OPTION_STATS_FIELDS} from '../../sockets/socket_constants'
 const host = '127.0.0.1'
 const port = 8567
 function rootReducer(state=initialState, action) {
@@ -45,6 +45,9 @@ function rootReducer(state=initialState, action) {
         });
     }
     else if (action.type === CLICK_PAGE) {
+        if (state.page === 'WatchLists.Browse' && s.page !== 'WatchLists.Browse') {
+            sendRequest(UNSUBSCRIBE_QUOTE, {"watch_lists": state.stock_list});
+        }
         return Object.assign({}, state, {
             page: s,
             response: ''

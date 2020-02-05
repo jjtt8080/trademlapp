@@ -11,7 +11,7 @@ import { ComboChart, Chart, ColumnChart, LineChart} from 'react-google-charts'
 const { Search } = Input;
 
 const ButtonGroup = Button.Group;
-var resolutions = ['1', '5', '15', '30', '60', 'D', 'W', 'M'];
+var resolutions = ['1m', '15m', '1D', '15D', '1M', '1Y', '5Y'];
 
 const prePopulatedPage = pageid => {
     if (pageid === "Markets.S&P")
@@ -108,9 +108,9 @@ class StockChart extends React.Component {
         if (server_response !== '') {
           var res = verifyServerResponse(server_response, this.action_type);
           if (isEmpty(res) === false){
-              console.log("in displayServerReponse" + res);
+              //console.log("in displayServerReponse" + res);
               var r  = ConvertData(res, this.resolution);
-              console.log("current server response is", JSON.stringify(r))
+              //console.log("current server response is", JSON.stringify(r))
               this.props.onDisplayResponse(r)
           }
         }

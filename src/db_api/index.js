@@ -1,5 +1,5 @@
 const socket_const = require('../sockets/socket_constants')
-const loki_api = require('./loki_api')
+//const loki_api = require('./loki_api')
 const mongo_api = require('./mongo_api')
 
 module.exports = {

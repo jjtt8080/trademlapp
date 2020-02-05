@@ -10,9 +10,7 @@ import { Button, Icon} from 'antd';
 import 'react-table/react-table.css'
 import { Watchlists } from './Watchlist.js'
 import { WatchListPopupDiag } from './WatchListPopup'
-const antd = require('antd');
-const { TextArea } = Input;
-const { Search } = Input;
+
 class WatchlistDropdown extends React.Component{
     constructor(props){
         super(props);

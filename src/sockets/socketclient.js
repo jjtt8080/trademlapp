@@ -3,7 +3,7 @@
 require('websocket')
 //var sleep = require('sleep');
 const socket_constant = require('./socket_constants');
-var mySocket = new WebSocket("ws://127.0.0.1:8567");
+var mySocket = new WebSocket("ws://192.168.2.18:8568");
 var callbackMap = new Map();
 //console.log("Create new socket");
 function sleep(millis) {

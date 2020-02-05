@@ -13,11 +13,11 @@ import { Row, Col } from 'antd';
 import { TreeSelect } from 'antd';
 import { OPTION_STATS_BR, GET_WATCHLIST_BYNAME_BR, OPTION_STATS_FIELDS_BR} from '../redux/constants'
 import ReactTable from 'react-table';
+
 import 'react-table/react-table.css'
 import { WatchListDowndownMenu } from './WatchListManage.js'
-const { Search } = Input;
 const { Option } = Select;
-const { TreeNode } = TreeSelect;
+
 const treeData = [
   {
     title: 'Node1',
@@ -44,9 +44,9 @@ const treeData = [
 ];
 
 
-const expiration_year = ['2014', '2015', '2016', '2017', '2018', '2019'];
+// const expiration_year = ['2014', '2015', '2016', '2017', '2018', '2019'];
 
-const optionstat_proj = ["year","month","symbol"];
+const optionstat_proj = ["year","month", "symbol"];
 const optionstat_meas = [{"$avg": "$median_iv_call"},
         {"$avg": "$median_iv_put"},  
         {"$avg": "$max_vol_call"},
@@ -68,6 +68,7 @@ function makeFieldNameForMeasure(c) {
     return retV
 
 } 
+
 class OptionStats extends React.Component {
         constructor(props){
         super(props);
@@ -97,8 +98,8 @@ class OptionStats extends React.Component {
     shouldComponentUpdate(nextProp, nextState) {
         if (this.state.watch_list_name != nextProp.watch_list_name) {
             console.log("watch_list_name", this.state.watch_list_name, nextProp.watch_list_name, nextState.watch_list_name)
-            this.state.watch_list_name = nextProp.watch_list_name;
-            this.state.optionStatsData = undefined; 
+            this.setState({watch_list_name : nextProp.watch_list_name});
+            this.setState({optionStatsData : undefined}); 
             return true;
         }
         if (this.state.treeValue !== nextProp.treeValue) {
@@ -120,7 +121,7 @@ class OptionStats extends React.Component {
                                          projectionAttrs:optionstat_proj, 
                                          projectionMeasures: optionstat_meas,
                                          filter:filterVal,
-                                         sortSpec:{"symbol": 1, "year": 1, "month":1},
+                                         sortSpec:{"symbol": 1, "year": 1, "month":1, "d_index": 1},
                                         WATCH_LIST_NAME: this.state.watch_list_name},
                         callback: this.displayResponse};
          console.log("getting optionstats", JSON.stringify(newState))
@@ -192,32 +193,50 @@ class OptionStats extends React.Component {
          }
          
      }
+    
      mapReactTableColumns = () => {
         var output = []
         var i = 0;
         for (var k in this.state.columns_title){
             var c = this.state.columns_title[k];
+            if (c === "symbol") {
+                output.push({
+                    Header: c,
+                    accessor: c,
+                    id: c,
+                    filterMethod: (filter, row) =>
+                        row[filter.id].startsWith(filter.value) &&
+                        row[filter.id].endsWith(filter.value)
+                });
+
+            }else {
               output.push({
                   Header: c,
                   accessor: c,
+                  id: c,
+                  filterMethod: (filter, row) =>
+                        Number(row[filter.id]) >= Number(String(filter.value).split(",")[0]) &&
+                        Number(row[filter.id]) <= Number(String(filter.value).split(",")[1])
               });
+            }
         }
         console.log("columns", output)
         return output;
          
      }
-     renderTable = () => {
+         renderTable = () => {
          if (this.state.optionStatsData !== undefined)
          return (
            <div>
             <Col span={24}>
+            
                    <div>
                      <ReactTable
-                      showPagination={false}
+                      showPagination={true}
                       minRows={0}
-                      columns={this.mapReactTableColumns()} data={this.state.optionStatsData}
-                      getTrProps={this.getTrProps}
-
+                      columns={this.mapReactTableColumns()} 
+                      data={this.state.optionStatsData}
+                      filterable
                      />
                     </div>
             </Col>	

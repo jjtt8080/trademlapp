@@ -5,6 +5,9 @@ const OPTION_CHAIN = 'option_chain';
 const OPTION_STATS = 'option_stats';
 const OPTION_STATS_FIELDS = 'option_stats_fields';
 const REALTIME_QUOTE = 'quotes';
+const UNSUBSCRIBE_QUOTE = "unsubscribe_quote";
+const SUBS_QUOTE = "realtime_quote";
+const SUBS_NEWS = "realtime_news";
 const UPDATE_WATCH_LIST = 'update_watch_list';
 const GET_WATCH_LISTS = 'getWatchLists';
 const GET_WATCHLIST_BYNAME = 'getWatchListByName';
@@ -27,6 +30,7 @@ module.exports = {
     OPTION_STATS : OPTION_STATS,
     OPTION_STATS_FIELDS : OPTION_STATS_FIELDS,
     REALTIME_QUOTE: REALTIME_QUOTE,
+    UNSUBSCRIBE_QUOTE: UNSUBSCRIBE_QUOTE,
     NEWS: NEWS,
     MOVERS: MOVERS,
     INDEX: INDEX,

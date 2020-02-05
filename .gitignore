@@ -33,5 +33,4 @@ data/*
 .eslintcache
 src/index1.js
 src/react-app-env.d.ts
-
-src/trade_api/api_key.json
+src/trade_api/config/*

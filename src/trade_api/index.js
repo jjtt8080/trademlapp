@@ -4,12 +4,14 @@ const td = require('./td_api')
 const fs = require('fs')
 const user_api = require('./user_api')
 
+
 module.exports = {
    TradeFunctions: function(type, params, ws, callback) {
    if (type === socket_const.PRICE_HISTORY) {
       return finn.FinnFunctions(type, params, ws,callback);
    }else if (type === socket_const.REALTIME_QUOTE |
-            type === socket_const.OPTION_CHAIN) {
+            type === socket_const.OPTION_CHAIN | 
+            type === socket_const.UNSUBSCRIBE_QUOTE) {
       return td.TdFunctions(type, params, ws,callback)
    }else if (type === socket_const.GET_WATCHLIST_BYNAME |
              type === socket_const.GET_WATCH_LISTS |

@@ -1,4 +1,4 @@
-import React from 'react';
+//import React from 'react';
 // Convert from [ { year: '2014', month: '12' }, { year: '2014', month: '11' } ]
 // to
 // <TreeNode value="All" title="All" key="0">
@@ -103,34 +103,32 @@ class MyTreeNode {
   }
 }
 function ConvertToObj(value, objNames) {
-    if (value === undefined || value.length === 0 ) return {}
+    if (value === undefined || value.length === 0 || value === "All") return {}
     var input = []
+    
     value.forEach(function(v){
-        if (v !== 'Default')
-        {
-            var values = v.split("-")
-            var returnObj = {}
-            var i = 0;
-            objNames.forEach(function(n){
-              if (!isNaN(values[i]))
-                  returnObj[n] = Number(values[i])
-              else
-                  returnObj[n] = values[i]
-              i += 1;
-            })
-            input.push(returnObj);
-        }
+        var values = v.split("-")
+        var returnObj = {}
+        var i = 0;
+        objNames.forEach(function(n){
+        if (!isNaN(values[i]))
+            returnObj[n] = Number(values[i])
+        else
+            returnObj[n] = values[i]
+        i += 1;
+        })
+        input.push(returnObj);
+        
     })
     return input;
 }
 
 function ConvertTreeData(input, treeSeq) {
-  var rootNode = new MyTreeNode("All ");
+  var rootNode = new MyTreeNode("All");
   input.forEach(function(row){
       //console.log("row", row);
       var concat_values = rootNode.getValue();
-      var level = 0;
-      var parent_node = rootNode;
+
       var currNode = undefined;
       var parent_key = rootNode.getValue();
      
@@ -144,46 +142,104 @@ function ConvertTreeData(input, treeSeq) {
                  bFirst = false;
              }
             concat_values = concat_values.concat(row[key]);
-            currNode = new MyTreeNode(concat_values, key)
-            rootNode.addChildrenOfParent(new MyTreeNode(parent_key), currNode)
+            currNode = new MyTreeNode(concat_values, key);
+            rootNode.addChildrenOfParent(new MyTreeNode(parent_key), currNode);
             parent_key = currNode.getValue()
             
          }
-         level += 1;
+         
       });
   })  
   //console.log("root node");
   rootNode.toString();
   return rootNode;
 }
-
-function ConvertData(input, parent) {
-  var output = {};
-  var parsedObj = input;
-
-  output = [];
-  var i = 0;
-  var keys = Object.keys(parsedObj);
-  var keylen = Object.keys(parsedObj).length;
-  var values = Object.values(parsedObj);
-  var k = '';
-    for (i = 0; i < keylen; ++i){
-      var a = values[i]
-      var mappedObj = {
-              'Quotes': a.symbol,
-              'bid':  a.bidPrice,
-              'ask': a.askPrice,
-              'volume': a.totalVolume,
-              '_52WkHigh': a["52WkHigh"],
-              '_52WkLow':a["52WkLow"],
-              'Chg': a["markChangeInDouble"],
-              'PctChg': a["markPercentChangeInDouble"]
+                         
+function getOriginalMap(watch_list_name) {
+    
+    var original_map = JSON.parse(sessionStorage.getItem(watch_list_name));
+    //console.log("getting original map", watch_list_name, original_map)
+    if (original_map !== undefined && original_map !== null) {
+        var returningMap = new Map();
+        for (var i =0; i < original_map.length; ++i) {
+            var entry = original_map[i];
+            returningMap.set(entry[0], entry[1]);
         }
-      output.push(mappedObj);
-      //console.log(JSON.stringify(mappedObj))
+        return returningMap;
+    } else {
+        return undefined;
     }
-    
-    
+}
+function setOriginalMap(watch_list_name, original_map) {
+    //console.log("setting original map for watchlist", watch_list_name, original_map)
+    sessionStorage.setItem(watch_list_name, JSON.stringify([...original_map]));
+}
+function convertOriginalDataToMap(data) {
+    if (data === undefined) return undefined;
+    var keylen = Object.keys(data).length;
+    var values = Object.values(data);
+    var returningMap = new Map();
+    for (var i = 0; i < keylen; ++i) {
+        var v = values[i];
+        var currentSymbol = v["Quotes"];
+        returningMap.set(currentSymbol,  v);
+    }
+    //console.log('originalMap keys:' + Object.keys(returningMap));
+    return returningMap;
+}
+function supplementData(new_data, original_map, symbol, keyName) {
+    //console.log("symbol", symbol);
+    //if (original_map !== undefined && original_map !== null)
+    //    console.log(original_map.get(symbol));
+    return (new_data !== undefined && !isNaN(new_data) ? new_data : 
+        (original_map !== undefined && original_map !== null && original_map.get(symbol) !== undefined) ?
+         original_map.get(symbol)[keyName]: null);
+}
+function ConvertData(watch_list_name, watch_list, input, original_data) {
+    var output = {};
+    var parsedObj = input;
+
+    output = [];
+    var i = 0;
+    var keys = Object.keys(parsedObj);
+    var keylen = Object.keys(parsedObj).length;
+    var values = Object.values(parsedObj);
+    var k = '';
+    var original_map = getOriginalMap(watch_list_name);
+    var pushed_keys = [];
+    for (i = 0; i < keylen; ++i){
+        var a = values[i]
+        var mappedObj = {
+                'Quotes': a.symbol,
+                'bid':  supplementData(a["bidPrice"], original_map, a.symbol, "bid"),
+                'ask': supplementData(a["askPrice"], original_map, a.symbol, "ask"),
+                'volume': supplementData(a["totalVolume"], original_map, a.symbol, "volume"),
+                '_52WkHigh': supplementData(a["52WkHigh"], original_map, a.symbol, "_52WkHigh"),
+                '_52WkLow':supplementData(a["52WkLow"], original_map, a.symbol, "_52WkLow"),
+                'Chg': supplementData(a["netChange"], original_map, a.symbol, "Chg"),
+                'PctChg': (supplementData(a["netChange"],original_map, a.symbol,"Chg")/
+                            supplementData(a["askPrice"],original_map, a.symbol,"ask")*100.0).toFixed(2)
+        }
+        output.push(mappedObj);
+        pushed_keys.push(a.symbol)
+        //console.log(JSON.stringify(mappedObj))
+    }
+    if (original_map !== undefined) {
+        for (const k of original_map.keys()){
+            if (pushed_keys.indexOf(k) !== -1) {
+                //console.log("not pushing ", k)
+                continue;
+            }
+            //console.log("pushing ", k)
+            //console.log("push original data from map", original_map.get(k))
+            if (watch_list.indexOf(k) === -1) continue;
+            output.push(original_map.get(k));
+        }
+    }
+    if (original_data === undefined || original_map === null || original_map === undefined || pushed_keys.length>0) {
+        var map = convertOriginalDataToMap(output);
+        setOriginalMap(watch_list_name, map);
+    }
     return output;
 }
 //export {mapReactTableColumns};

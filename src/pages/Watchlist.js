@@ -111,7 +111,7 @@ class Watchlist extends React.Component {
               });
             }
         }
-        console.log("columns", output)
+        //console.log("columns", output)
         return output;
     }
 
@@ -142,10 +142,10 @@ class Watchlist extends React.Component {
 	}
     componentDidMount() {
         this._isMounted = true;
-        console.log("componentDidMount", this._isMounted);
+        //console.log("componentDidMount", this._isMounted);
     }
     componentWillUnmount(){
-        console.log("componentWillUnmount")
+        //console.log("componentWillUnmount")
         this._isMounted = false;   
     }
     shouldComponentUpdate(nextProp, nextState) {
@@ -163,7 +163,7 @@ class Watchlist extends React.Component {
         
     }
     componentDidUpdate(prevProps, prevState, snapshot) {
-        console.log("componentDidUpdate");
+        //console.log("componentDidUpdate");
         this.watch_list_name = this.props.watch_list_name;
     }
     
@@ -227,17 +227,17 @@ class Watchlist extends React.Component {
             var res = verifyServerResponse(server_response, GET_QUOTE);
             var convertedData;
             if (isEmpty(res) === false) {
-                convertedData = tableUtils.ConvertData(res, this);
+                convertedData = tableUtils.ConvertData(this.watch_list_name, this.watch_list, res, this.state.data);
                 //console.log("converted", convertedData);
             }
             else {
                 //console.log("empty response", convertedData);
-                this.state.data = emptyHeader;
+                this.setState({data: emptyHeader});
                 this.props.onDisplayResponse(emptyHeader);
             }
-            if ((this.watch_list_name !== '' || this.props.watch_list_name.value != '' ) && isEmpty(convertedData) === false) {  
-                this.state.data = convertedData;
-                console.log("onDisplayResponse", this._isMounted, convertedData)
+            if ((this.watch_list_name !== '' || this.props.watch_list_name.value !== '' ) && isEmpty(convertedData) === false) {  
+                this.setState({data: convertedData});
+                //console.log("onDisplayResponse", this._isMounted, convertedData)
                 this.props.onDisplayResponse(this.props.stock_list)
                 if (this._isMounted) {
                     this.forceUpdate();
@@ -247,7 +247,7 @@ class Watchlist extends React.Component {
             }
             
         } else {
-            this.state.data = emptyHeader;
+            this.setState({data: emptyHeader});
             //console.log("empty result 2");
             this.props.onDisplayResponse(emptyHeader);
         }
@@ -266,7 +266,7 @@ class Watchlist extends React.Component {
         return {};
     };
     renderTableData = () => {
-        console.log("this render tableData", this.state.data)
+        //console.log("this render tableData", this.state.data)
         return this.state.data;
     }
     renderInternal() {

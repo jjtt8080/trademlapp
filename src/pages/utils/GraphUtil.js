@@ -4,7 +4,7 @@ var volume_label = ["time", "volume"];
 
 function ConvertData(input, resolution) {
     if (input === '' || input === undefined) {
-        console.log("bad format of input");
+        console.error("bad format of input");
         return {};
     }
     if (input.hasOwnProperty("h") === false) {
@@ -17,27 +17,31 @@ function ConvertData(input, resolution) {
     for (var i = 0; i < inputObj.h.length; ++i) {
       var t = inputObj.t[i];
       var dateO = new Date(t*1000);
-      console.log("dateO", dateO);
+      //console.log("dateO", dateO);
       var d = '';
-      if (resolution === 'M') {
-          d = (dateO.getYear() +1900)+ '/' + (dateO.getMonth()+1) + '/' +  dateO.getDate();
+      var originalD =  (dateO.getYear() +1900)+ '/' + (dateO.getMonth()+1) + '/' +  (dateO.getDate()+1);
+      if ( resolution === '5Y') {
+          d =  (dateO.getYear() +1900) + '/' + (dateO.getMonth()+1);
       }
-      else if (resolution === 'D' || resolution === 'W') {
-          d = (dateO.getMonth()+1) + '/' +  dateO.getDate();
+      else if (resolution === '1Y') {
+          d = (dateO.getYear() + 1900) + '/' + ( dateO.getMonth()+1) + " w " + Math.floor(dateO.getDate() /7)
+      }
+      else if (resolution === '1M'  || resolution === '15D') {
+          d = (dateO.getMonth()+1) + '/' +  (dateO.getDate() + 1);
       }else {
           d = (dateO.getHours()) + ':' + dateO.getMinutes();
       }
       data[i+1] = [ d,inputObj.l[i], inputObj.o[i], inputObj.c[i],inputObj.h[i] ];
       volumeData[i+1] = [ d, inputObj.v[i] ];
     }
-    console.log("return result", data, volumeData)
+    //console.log("return result", data, volumeData)
     return ({data, volumeData});
 
 }
 
 function ExtractExprDays(input) {
     if (input === '' || input === undefined) {
-      console.log("bad format of input")
+      console.error("bad format of input")
       return;
     }
     var inputObj = input;
@@ -59,7 +63,7 @@ function ExtractStrikes(input, expDate) {
 }
 function ConvertOptionData(input, expDate, optionType, fieldNames) {
     if (input === '' || input === undefined) {
-      console.log("bad format of input")
+      console.error("bad format of input")
       return [];
     }
     var inputObj = input;
@@ -91,7 +95,7 @@ function ConvertOptionData(input, expDate, optionType, fieldNames) {
         var newObj = [strike]
         var innerObj = mapObj[expDate][strike][0];
         if (p === 0){
-            console.log(innerObj);
+            //console.log(innerObj);
         }
         for (var j = 1; j < fieldNames.length; ++j){
             var fieldId = fieldNames[j]

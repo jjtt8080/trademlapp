@@ -4,7 +4,7 @@ const socket_const = require('../sockets/socket_constants')
 
 function GetWatchListByName(watch_list_name) {
     if (watch_list_name !== '') {
-        var watchlistFileName = '../../data/' + watch_list_name + '.json';
+        var watchlistFileName = '/home/jane/webapp/trademlapp/data/' + watch_list_name + '.json';
         if (fs.existsSync(watchlistFileName)) {
             var watchFileObj = fs.readFileSync(watchlistFileName);
             var jsonObj = JSON.parse(watchFileObj)
@@ -13,16 +13,16 @@ function GetWatchListByName(watch_list_name) {
             return resultObj;
         }
     }
-    var resultObj = {type: socket_const.ARG_ERROR, result: "Wrong watch list name"};
-    console.log("error happen in getwatchlistbyname" + JSON.stringify(resultObj));
+    resultObj = {type: socket_const.ARG_ERROR, result: "Wrong watch list name"};
+    console.error("error happen in getwatchlistbyname" + JSON.stringify(resultObj));
     return resultObj;
 }
 function GetWatchLists() {
-    var watchlistFileName = '../../data/watch_list.json';
-     var watchFileObj = fs.readFileSync(watchlistFileName);
+    var watchlistFileName = '/home/jane/webapp/trademlapp/data/watch_list.json';
+    var watchFileObj = fs.readFileSync(watchlistFileName);
     var jsonObj = JSON.parse(watchFileObj)
-    var strJsonObj = JSON.stringify(jsonObj);
-    console.log("sent ", strJsonObj);
+    //var strJsonObj = JSON.stringify(jsonObj);
+    //console.log("sent ", strJsonObj);
     var result = {type: socket_const.GET_WATCH_LISTS, result: jsonObj["watch_lists"]}
     return result;
 }

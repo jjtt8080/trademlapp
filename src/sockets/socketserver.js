@@ -23,17 +23,22 @@ function sleep(ms){
 }
 
 const server = http.createServer(app);
+
+
 const wss = new WebSocket.Server({ server, verifyClient });
 var counter = 1;
 
 function callbackToClient(ws, msg) {
   ws.send(msg)
 }
-wss.on('connection', function connection(ws) {
+
+wss.on('connection', function connection(ws, req) {
   if (ws.upgradeReq !=  undefined) {
     const location = url.parse(ws.upgradeReq.url, true);
   }
-  console.log("in on connection")
+  var id = req.headers['sec-websocket-key'];
+  ws.uuid = id;
+  console.log("in on connection", id)
   ws.send('{"message":"connected"}')
   // You might use location.query.access_token to authenticate or share sessions
   // or ws.upgradeReq.headers.cookie (see http://stackoverflow.com/a/16395220/151312)
@@ -49,8 +54,9 @@ wss.on('connection', function connection(ws) {
     }
 
   });
+  
 });
 
-server.listen(8567, function listening() {
-  console.log('Listening on %d', server.address().port);
+server.listen(8568, function listening() {
+    console.log('Listening on %d', server.address().port);
 });
