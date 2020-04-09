@@ -1,5 +1,5 @@
 var unirest = require("unirest");
-const api_key = require('./api_key.json')["FINN_API_KEY"]
+const api_key = require('./config/api_key.json')["FINN_API_KEY"]
 //const WebSocket = require('ws')
 const socket_const = require('../sockets/socket_constants')
 function minutesSinceMarketOpen() {

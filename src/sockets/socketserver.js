@@ -45,7 +45,7 @@ wss.on('connection', function connection(ws, req) {
 
   ws.on('message', function incoming(message) {
     console.log('received: %s', message);
-    messageJson = JSON.parse(message);
+    var messageJson = JSON.parse(message);
     if (messageJson.hasOwnProperty("type") & messageJson.hasOwnProperty("params")) {
       trade_api.TradeFunctions(messageJson.type, messageJson.params, ws,callbackToClient)
     }else {

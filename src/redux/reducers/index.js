@@ -1,7 +1,7 @@
-import { CONNECT, ADD_STOCK, REMOVE_STOCK, DISPLAY_RESPONSE,OPTION_CHAIN_BR, CLICK_PAGE,GET_QUOTE, UPDATE_WATCH_LIST_BR, GET_WATCH_LISTS_BR, GET_WATCHLIST_BYNAME_BR,DISPLAY_WATCHLISTS , OPTION_STATS_BR, OPTION_STATS_FIELDS_BR} from '../constants/index';
+import { CONNECT, ADD_STOCK, REMOVE_STOCK, DISPLAY_RESPONSE,OPTION_CHAIN_BR, CLICK_PAGE,GET_QUOTE, UPDATE_WATCH_LIST_BR, GET_WATCH_LISTS_BR, GET_WATCHLIST_BYNAME_BR,DISPLAY_WATCHLISTS , OPTION_STATS_BR, OPTION_STATS_FIELDS_BR, GET_MODEL_PREDICTIONS} from '../constants/index';
 import {initialState} from '../constants/index'
 import {sendRequest, getSocketState, getSocket} from '../../sockets/socketclient'
-import {SOCKET_OPEN, SOCKET_CLOSE, SOCKET_ERROR, SOCKET_UNKNOWNSTATE, PRICE_HISTORY,OPTION_CHAIN, REALTIME_QUOTE,UNSUBSCRIBE_QUOTE, UPDATE_WATCH_LIST, GET_WATCH_LISTS, GET_WATCHLIST_BYNAME, OPTION_STATS, OPTION_STATS_FIELDS} from '../../sockets/socket_constants'
+import {SOCKET_OPEN, SOCKET_CLOSE, SOCKET_ERROR, SOCKET_UNKNOWNSTATE, PRICE_HISTORY,OPTION_CHAIN, REALTIME_QUOTE,UNSUBSCRIBE_QUOTE, UPDATE_WATCH_LIST, GET_WATCH_LISTS, GET_WATCHLIST_BYNAME, OPTION_STATS, OPTION_STATS_FIELDS, MODEL_PREDICTIONS} from '../../sockets/socket_constants'
 const host = '127.0.0.1'
 const port = 8567
 function rootReducer(state=initialState, action) {
@@ -117,6 +117,18 @@ function rootReducer(state=initialState, action) {
         } else {
             return Object.assign({}, state, {
                 optionStatsTree: s.optionStatsTree             
+            })
+        }
+    } else if (action.type === GET_MODEL_PREDICTIONS) {
+        if (s.callback !== undefined) {
+            sendRequest(MODEL_PREDICTIONS,
+                         s.modelQueryObj, s.callback);
+            return Object.assign({}, state, {
+                modelQueryObj: s.modelQueryObj
+            })
+        } else {
+            return Object.assign({}, state, {
+                modelQueryObj: s.modelQueryObj             
             })
         }
     }

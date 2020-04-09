@@ -1,13 +1,12 @@
 import React, {useState} from 'react';
-import {Button} from 'antd';
 import 'antd/dist/antd.css';
 import './MyLayout.css';
 import {connect} from "react-redux";
 import {Layout, Menu, Breadcrumb, Icon, Dropdown} from 'antd';
 import {StockCharts} from './StockChart.js';
-import {Watchlists} from './Watchlist.js'
 import {OptionChains} from './OptionChain.js'
 import {OptionStatistics} from './OptionStats.js'
+import {Models} from './Model.js'
 import {initialState} from '../redux/constants/index.js'
 import {mapStateToProps, mapDispatchToProps} from './ReduxMapping.js'
 import { Typography } from 'antd';
@@ -15,7 +14,7 @@ import {WatchListManaged, WatchListBrowsed} from './WatchListManage';
 const { Title } = Typography;
 const  {SubMenu } = Menu;
 const  {Header, Content, Sider} = Layout;
-const g_MenuItem = ['Quotes', 'WatchLists', 'Markets', 'OptionStats'];
+const g_MenuItem = ['Quotes', 'WatchLists', 'Markets', 'OptionStats', 'Model'];
 
 
 const getIconType = function(key) {
@@ -68,6 +67,8 @@ class MyLayout extends React.Component {
             return ['S&P', 'QQQ', 'DowJones', 'IWM', 'USO'];
         else if (m === 'OptionStats')
             return ['Overall', 'Detail']
+        else if (m === 'Model') 
+            return ['Stock']
         else return ["Unknown"]
     }
     setPageMenu(key){
@@ -90,6 +91,8 @@ class MyLayout extends React.Component {
             return <StockCharts state={this.state} value={this.state.value}/>
         } else if (m.startsWith('OptionStats')) {
             return <OptionStatistics state={this.state}/>
+        } else if (m.startsWith('Model')) {
+            return <Models state={this.state}/>
         } else { 
             console.error("strange");
             return <StockCharts state={this.state}/>

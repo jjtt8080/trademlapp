@@ -10,8 +10,8 @@ module.exports = {
    if (type === socket_const.PRICE_HISTORY) {
       return finn.FinnFunctions(type, params, ws,callback);
    }else if (type === socket_const.REALTIME_QUOTE |
-            type === socket_const.OPTION_CHAIN | 
-            type === socket_const.UNSUBSCRIBE_QUOTE) {
+            type === socket_const.OPTION_CHAIN |
+            type === socket_const.UNSUBSCRIBE_QUOTE ) {
       return td.TdFunctions(type, params, ws,callback)
    }else if (type === socket_const.GET_WATCHLIST_BYNAME |
              type === socket_const.GET_WATCH_LISTS |
@@ -22,7 +22,9 @@ module.exports = {
             type === socket_const.OPTION_STATS |
             type === socket_const.OPTION_STATS_FIELDS) {
       return td.TdFunctions(type, params, ws, callback)
-   }else {
+   }else if (type === socket_const.MODEL_PREDICTIONS) {
+         return user_api.ModelFunc(type, params, ws, callback);
+   }else{
       console.error("Unknown type specified in tradeapi", type);
 
     }

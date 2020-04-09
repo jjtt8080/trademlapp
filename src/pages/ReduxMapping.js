@@ -1,5 +1,5 @@
 
-import {CONNECT, ADD_STOCK, REMOVE_STOCK, DISPLAY_RESPONSE, CLICK_PAGE, GET_QUOTE, UPDATE_WATCH_LIST_BR, GET_WATCH_LISTS_BR, GET_WATCHLIST_BYNAME_BR,DISPLAY_WATCHLISTS, OPTION_CHAIN_BR, OPTION_STATS_BR, OPTION_STATS_FIELDS_BR} from '../redux/constants/index';
+import {CONNECT, ADD_STOCK, REMOVE_STOCK, DISPLAY_RESPONSE, CLICK_PAGE, GET_QUOTE, UPDATE_WATCH_LIST_BR, GET_WATCH_LISTS_BR, GET_WATCHLIST_BYNAME_BR,DISPLAY_WATCHLISTS, OPTION_CHAIN_BR, OPTION_STATS_BR, OPTION_STATS_FIELDS_BR, GET_MODEL_PREDICTIONS} from '../redux/constants/index';
 import {PRICE_HISTORY,
         OPTION_CHAIN,
         REALTIME_QUOTE,
@@ -11,7 +11,8 @@ import {PRICE_HISTORY,
         GET_WATCHLIST_BYNAME,
         UPDATE_WATCH_LIST,
         OPTION_STATS,
-        OPTION_STATS_FIELDS
+        OPTION_STATS_FIELDS,
+        MODEL_PREDICTIONS
 } from '../sockets/socket_constants';
 
 const  mapStateToProps = state => {
@@ -28,7 +29,8 @@ const  mapStateToProps = state => {
     watchlists_dirty : state.watchlists_dirty,
     optionQueryObj : state.optionQueryObj,
     optionFieldTree : state.optionFieldTree,
-    optionStatsTree : state.optionStatsTree
+    optionStatsTree : state.optionStatsTree,
+    modelPredictions: state.modelPredictions
   };
 };
 const ActionTypeMapping = action_type => {
@@ -48,7 +50,9 @@ const ActionTypeMapping = action_type => {
     case OPTION_STATS_BR:
         return OPTION_STATS;
     case OPTION_STATS_FIELDS_BR:
-            return OPTION_STATS_FIELDS;
+        return OPTION_STATS_FIELDS;
+    case GET_MODEL_PREDICTIONS:
+        return MODEL_PREDICTIONS;
     default:
         console.error("unknown type", action_type)
         break;
@@ -150,22 +154,30 @@ function displayWatchList(list) {
         payload:list
     }
 }
+function getModelPredictions(state) {
+  return {
+    type: GET_MODEL_PREDICTIONS,
+    payload: state
+  }
+}
 const mapDispatchToProps = dispatch => {
     return {
 	onConnect: (state) => dispatch(connect(state)),
 	onAddStock : (state)=> dispatch(addStock(state)),
 	onRemoveStock: () => dispatch({type: REMOVE_STOCK}),
 	onDisplayResponse: (state) =>dispatch(displayResponse(state)),
-    onGetOptions: (state) => dispatch(getOptions(state)),
-    onGetOptionStats: (state) => dispatch(getOptionStats(state)),
-    onGetOptionStatsFields: (state) => dispatch(getOptionStatsFields(state)),
+  onGetOptions: (state) => dispatch(getOptions(state)),
+  onGetOptionStats: (state) => dispatch(getOptionStats(state)),
+  onGetOptionStatsFields: (state) => dispatch(getOptionStatsFields(state)),
 	onClickPage: (pageID) => dispatch(clickPage(pageID)),
 	onRealtimeQuote: (state) => dispatch(realtimeQuote(state)),
 	onUpdateWatchList: (state) => dispatch(updateWatchList(state)),
 	onGetWatchLists: (state) => dispatch(getWatchLists(state)),
 	onGetWatchListByName: (state) => dispatch(getWatchListByName(state)),
-	onDisplayWatchLists:(list) =>dispatch(displayWatchList(list))
+  onDisplayWatchLists:(list) =>dispatch(displayWatchList(list)),
+  onGetModelPredictions:(state) =>dispatch(getModelPredictions(state))
    };
+   
 };
 
 export {mapStateToProps}

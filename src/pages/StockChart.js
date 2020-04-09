@@ -1,13 +1,11 @@
-import React, { Component } from 'react';
-import ReactDOM from 'react-dom';
-import { Button, Icon } from 'antd';
+import React from 'react';
+import { Button } from 'antd';
 import { Input } from 'antd';
-import { Alert } from 'antd';
 import { connect } from "react-redux";
-import { ADD_STOCK,GET_QUOTE } from '../redux/constants/index';
+import { ADD_STOCK} from '../redux/constants/index';
 import { mapStateToProps, mapDispatchToProps, verifyServerResponse, isEmpty } from './ReduxMapping.js'
 import { ConvertData } from './utils/GraphUtil.js'
-import { ComboChart, Chart, ColumnChart, LineChart} from 'react-google-charts'
+import { Chart } from 'react-google-charts'
 const { Search } = Input;
 
 const ButtonGroup = Button.Group;

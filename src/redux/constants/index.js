@@ -1,4 +1,4 @@
-import {CONNECT, ADD_STOCK, REMOVE_STOCK, DISPLAY_RESPONSE, CLICK_PAGE, GET_QUOTE, UPDATE_WATCH_LIST_BR, GET_WATCH_LISTS_BR, GET_WATCHLIST_BYNAME_BR, DISPLAY_WATCHLISTS, OPTION_CHAIN_BR, OPTION_STATS_BR,OPTION_STATS_FIELDS_BR}  from './action-types.js';
+import {CONNECT, ADD_STOCK, REMOVE_STOCK, DISPLAY_RESPONSE, CLICK_PAGE, GET_QUOTE, UPDATE_WATCH_LIST_BR, GET_WATCH_LISTS_BR, GET_WATCHLIST_BYNAME_BR, DISPLAY_WATCHLISTS, OPTION_CHAIN_BR, OPTION_STATS_BR,OPTION_STATS_FIELDS_BR, GET_MODEL_PREDICTIONS}  from './action-types.js';
 import {PropTypes} from 'prop-types'
 export {CONNECT}
 export {ADD_STOCK}
@@ -13,6 +13,7 @@ export {DISPLAY_WATCHLISTS}
 export {OPTION_CHAIN_BR}
 export {OPTION_STATS_BR}
 export {OPTION_STATS_FIELDS_BR}
+export {GET_MODEL_PREDICTIONS}
 const StateObj = {
   state:
     PropTypes.shape({
@@ -29,7 +30,8 @@ const StateObj = {
       action: PropTypes.string,
       optionQueryObj: PropTypes.object,
       optionFieldTree: PropTypes.object,
-      optionStatsTree: PropTypes.object
+      optionStatsTree: PropTypes.object,
+      modelQueryObj: PropTypes.object
     }).isRequired
 };
 var initialState = {
@@ -46,7 +48,8 @@ var initialState = {
     action: '',
     optionQueryObj: undefined,
     optionFieldTree: undefined,
-    optionStatsTree: undefined
+    optionStatsTree: undefined,
+    modelQueryObj: undefined
 }
 export {StateObj}
 export {initialState}

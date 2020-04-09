@@ -11,6 +11,7 @@ const SUBS_NEWS = "realtime_news";
 const UPDATE_WATCH_LIST = 'update_watch_list';
 const GET_WATCH_LISTS = 'getWatchLists';
 const GET_WATCHLIST_BYNAME = 'getWatchListByName';
+const MODEL_PREDICTIONS = "model_predictions";
 const NEWS = 'companyNews';
 const INDEX = 'index';
 const MOVERS = 'movers';
@@ -45,5 +46,6 @@ module.exports = {
     SOCKET_OPEN: SOCKET_OPEN,
     SOCKET_CLOSE: SOCKET_CLOSE,
     SOCKET_ERROR: SOCKET_ERROR,
-    SOCKET_UNKNOWNSTATE: SOCKET_UNKNOWNSTATE
+    SOCKET_UNKNOWNSTATE: SOCKET_UNKNOWNSTATE,
+    MODEL_PREDICTIONS: MODEL_PREDICTIONS
 }

@@ -1,15 +1,36 @@
 var unirest = require("unirest");
-const api_key = require('./api_key.json')["TD_API_KEY"]
+const api_key = require('./config/api_key.json')["TD_API_KEY"]
 const WebSocket = require('ws')
 const socket_const = require('../sockets/socket_constants')
 const fs = require('fs');
 var g_refresh_token = null;
 var g_loginStatus = 30;
+var g_clientSubscriptionMap = new Map(); //uuid => symbols
+var g_symbolSocketMap = new Map(); //symbols => uuid;
+var g_clientSocketMap = new Map(); // uuid => Websocket
+
 function jsonToQueryString(json) {
     return Object.keys(json).map(function(key) {
             return encodeURIComponent(key) + '=' +
                 encodeURIComponent(json[key]);
         }).join('&');
+}
+var myTdSock = null;
+function getWebSocket(url) {
+    if (myTdSock === null) {
+        myTdSock = new WebSocket(url); 
+
+    }else if (myTdSock !== null && myTdSock.readyState !== WebSocket.OPEN) {
+        myTdSock = new WebSocket(url);
+    }
+    myTdSock.onclose = () => {
+        console.log('Web Socket Connection Closed');
+    };
+    myTdSock.onconnection = () => {
+        console.log('Web Socket Connection Opened');
+    };
+    return myTdSock;
+   
 }
 function composeLoginRequest(res) {
     var userPrincipalsResponse = res;
@@ -33,7 +54,7 @@ function composeLoginRequest(res) {
                 {
                     "service": "ADMIN",
                     "command": "LOGIN",
-                    "requestid": 99,
+                    "requestid": "98",
                     "account": userPrincipalsResponse.accounts[0].accountId,
                     "source": userPrincipalsResponse.streamerInfo.appId,
                     "parameters": {
@@ -41,16 +62,28 @@ function composeLoginRequest(res) {
                         "token": userPrincipalsResponse.streamerInfo.token,
                         "version": "1.0"
                     }
+                },
+                {
+                        "service": "ADMIN",
+                        "requestid": "99",
+                        "command": "QOS",
+                        "account": userPrincipalsResponse.accounts[0].accountId,
+                        "source":  userPrincipalsResponse.streamerInfo.appId,
+                        "parameters": {
+                            "qoslevel": "4"
+                        }
+                    
                 }
+            
         ]
     }
 
-    var streamerUrl = "wss://" + "streamer-ws.tdameritrade.com" + "/ws";
-    console.log("request in composeLoginRequest", request)
+    var streamerUrl = "wss://" + userPrincipalsResponse.streamerInfo["streamerSocketUrl"] + "/ws";
+    console.log("request in composeLoginRequest", request, streamerUrl)
     return {"streamerUrl": streamerUrl, "request": request, "credentials": credentials};
 }
 
-var myTdSock = new WebSocket("wss://streamer-ws.tdameritrade.com/ws"); 
+
 var streamerLoginInfo;
 function refreshToken() {
     var url = "https://api.tdameritrade.com/v1/oauth2/token?apikey="+api_key;
@@ -67,7 +100,7 @@ function refreshToken() {
     else {
         body = {'grant_type': 'refresh_token','client_id': api_key, 'refresh_token': refresh_token};
     }
-    var bodyStr = JSON.stringify(body);
+    //var bodyStr = JSON.stringify(body);
     return  unirest.post(url).header({'Content-Type': 'application/x-www-form-urlencoded'}).send(body);
 }
 function GetStreamerLoginRequest() {
@@ -81,25 +114,41 @@ function GetStreamerLoginRequest() {
 function LoginStreamServer(res) {
     streamerLoginInfo = composeLoginRequest(res);
     var strLoginRequest = JSON.stringify(streamerLoginInfo["request"]);
-    myTdSock.send(strLoginRequest);
-    return true;
+    var tSock = getWebSocket(streamerLoginInfo.streamerUrl);
+    if (tSock.readyState === WebSocket.OPEN) {
+        tSock.send(strLoginRequest);
+          HandleResponse(null, null);
+            return true;
+    }else {
+        var retryCount = 1;
+        while(retryCount++ < 4) {
+            sleep(5).then(()=>{
+                if (tSock.readyState === WebSocket.OPEN) {
+                    tSock.send(strLoginRequest);
+                    HandleResponse(null, null);
+                    return true;
+                }
+            })
+        }
+    
+    }
 }
 async function refreshTokenAndGetPrincipal() {
     return new Promise((resolve, reject)=>{
         refreshToken().then(function(resp){
-        var respJson = resp.body;
-        //console.log("refreshTokenResult", respJson);
-        if (respJson !== null && respJson["access_token"] != null) {
-            respJson["refresh_token"] = g_refresh_token;
-            var tokenObj = JSON.stringify(respJson);
-            
-            //console.log("updating access token: ", tokenObj);
-            fs.writeFileSync('/home/jane/python/tradeML/trade_api/tmp/access_token.json', tokenObj); 
-              resolve(GetStreamerLoginRequest())
-            
-        }else {
-           resolve( respJson);
-        }
+            var respJson = resp.body;
+            //console.log("refreshTokenResult", respJson);
+            if (respJson !== null && respJson["access_token"] != null) {
+                respJson["refresh_token"] = g_refresh_token;
+                var tokenObj = JSON.stringify(respJson);
+                
+                //console.log("updating access token: ", tokenObj);
+                fs.writeFileSync('/home/jane/python/tradeML/trade_api/tmp/access_token.json', tokenObj); 
+                resolve(GetStreamerLoginRequest())
+                
+            }else {
+            resolve( respJson);
+            }
         });
     });
 }
@@ -111,17 +160,18 @@ function LoginRefreshToken(res){
     else
         return (LoginStreamServer(res.body));
 }
-function LoginEx()
+function LoginEx(uuid)
 {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve, reject)=>{
         GetStreamerLoginRequest()
         .then(function(res){
             resolve(LoginRefreshToken(res));
         });
     });
 }
-
-HandleResponse(null, null);
+LoginEx(0).then(function(res){
+    console.log("finished login");
+});
 var constRequestId = 100;
 function getNextRequestId() {
     return constRequestId++;
@@ -153,25 +203,41 @@ const stockKeyMap = {
     "25": "description",
     "28": "openPrice",
     "29": "netChange",
-    "key": "symbol"
+    "key": "symbol",
+    "cusip" : "cusip"
 };
 function mapKeyToResult(service, content) {
     if (service === "QUOTE") {
-        var outerMap  = [];
-        Object.keys(content).map((v) =>{
-            var inner = content[v];
+        var outerMap  = new Map();
+        content.forEach((v)=>{
+            var inner = v;
             var innerObj = {}
             Object.keys(inner).map((k) => {
                 var inferredKey = stockKeyMap[k];
                 innerObj[inferredKey] = inner[k];
             });
-            outerMap.push(innerObj);
+            var symbol = innerObj["symbol"];
+            if (g_symbolSocketMap.has(symbol)) {
+                var uuidSet = g_symbolSocketMap.get(symbol).values();
+
+                for (var uuid = uuidSet.next().value; uuid !== undefined; uuid = uuidSet.next().value){
+                    if (outerMap.has(uuid)){
+                        var innerSet= outerMap.get(uuid);
+                        innerSet.push(innerObj);
+                        outerMap.set(uuid, innerSet);
+                    }else {
+                        outerMap.set(uuid, [innerObj]);
+                        
+                    }
+                    console.log("push" + uuid + " : " + JSON.stringify(innerObj) + " to outerMap");
+                }
+            }
         });
-        //console.log(outerMap);
+        
         return outerMap;
     }
 }
-function HandleResponseInner(evt2, callBackFunc, clientSock) {
+function HandleResponseInner(evt2, callBackFunc) {
     
     var data = JSON.parse(evt2["data"]);
     for (var k of Object.keys(data)) {
@@ -185,12 +251,21 @@ function HandleResponseInner(evt2, callBackFunc, clientSock) {
             var service = innerData.service;
             var command = innerData.command;
             var dataContent = innerData.content;
-            console.log("key:", k, "value:",dataContent);
-            if (service === "QUOTE" && command == 'SUBS') {
-                var contentObj = mapKeyToResult("QUOTE", dataContent);
-                var resultStr = JSON.stringify({"type": socket_const.REALTIME_QUOTE, "result": contentObj});
-                //console.log("send back to client ", innerData.command);
-                callBackFunc(clientSock, resultStr);
+            console.log("key:", k, "value:",JSON.stringify(dataContent));
+            if (service === "QUOTE" && command === 'SUBS') {
+                var contentMap = mapKeyToResult("QUOTE", dataContent);
+                var keys = contentMap.keys();
+                for (var uuid of keys) {
+                    var content = contentMap.get(uuid);
+                    var resultStr = JSON.stringify({"type": socket_const.REALTIME_QUOTE, "result": content});
+                    console.log("send back to client ", resultStr);
+                    if (g_clientSocketMap.has(uuid)){
+                        var ws = g_clientSocketMap.get(uuid);
+                        callBackFunc(ws,resultStr);
+                    }else {
+                        console.error("can't find the socket info for", uuid);
+                    }
+                }
             }
         }              
     }
@@ -209,27 +284,111 @@ function HandleGenericResponse(evt2) {
             var dataContent = innerObj.content;
             var code = dataContent.code;
             var message = dataContent.msg;
-            console.log("message", message);
+            console.log("message", message, code);
             if (code !== 0 && service === 'ADMIN' && command === 'LOGIN') {
                 g_loginStatus = code;
             }
-            else if (code === 0 && service === 'ADMIN' && command === 'LOGIN') {
+            else if (code === 0 && service === 'ADMIN' && command === 'LOGIN' && message) {
                 g_loginStatus = 0;
             }
         
         }              
     }
 }
-
-function HandleResponse(callBackFunc=null, clientSock=null) {
-    myTdSock.onmessage = function (evt2) {
+function sleep (time) {
+    return new Promise((resolve) => setTimeout(resolve, time));
+  }
+function HandleResponseEx(callBackFunc) {
+    var tSock = getWebSocket(streamerLoginInfo.streamerUrl); 
+    tSock.onmessage = function (evt2) {
         //console.log("callBackFunc", callBackFunc, clientSock);
-        if (callBackFunc !== null && clientSock !== null) {
-            HandleResponseInner(evt2, callBackFunc, clientSock);
+        if (callBackFunc !== null) {
+            HandleResponseInner(evt2, callBackFunc);
         }else {
             HandleGenericResponse(evt2);
         }
         
+    }
+    tSock.onerror = function(evt) {
+        console.error(evt);
+    }
+}
+function HandleResponse(callBackFunc=null) {
+    if(streamerLoginInfo === undefined) {
+        sleep(5).then(()=>{
+            HandleResponseEx(callBackFunc);
+        })
+    }
+    else {
+        HandleResponseEx(callBackFunc);
+    }
+    
+}
+function putSubscriptionMap(ws, symbols){
+    g_clientSubscriptionMap.set(ws.uuid, new Set(symbols));
+    
+    if (!g_clientSocketMap.has(ws.uuid)){
+        g_clientSocketMap.set(ws.uuid, ws);
+    }
+    if (g_clientSubscriptionMap.has(0)){
+        symbols.forEach(s=>{
+            g_clientSubscriptionMap.get(0).add(s);
+        });
+    }else {
+        g_clientSubscriptionMap.set(0, new Set(symbols));
+    }
+    var currentMapKeys = new Set(g_symbolSocketMap.keys());
+    var incomingSymbols = new Set(symbols);
+    var symbolsNeedToRemove = new Set(
+        [...currentMapKeys].filter(x=> !incomingSymbols.has(x)));
+    for (var s in symbols) {
+        var symbol = symbols[s];
+        if (g_symbolSocketMap.has(symbol)) {
+            g_symbolSocketMap.get(symbol).add(ws.uuid);
+        }else {
+            var uuidSet = new Set();
+            uuidSet.add(ws.uuid);
+            g_symbolSocketMap.set(symbol, uuidSet);
+        }
+    }
+    symbolsNeedToRemove.forEach((sm)=> {
+        var uuidSet2 = g_symbolSocketMap.get(sm);
+        if (uuidSet2.has(ws.uuid)) {
+            g_symbolSocketMap.get(sm).delete(ws.uuid);
+            if (g_symbolSocketMap.get(sm).size === 0) {
+                //No longer has any websocket interested in this symbol
+                g_clientSubscriptionMap.get(0).delete(sm);
+            }
+        }
+    });
+    
+}
+function removeSubscriptions(ws) {
+    if (g_clientSubscriptionMap.has(ws.uuid)) {
+        var originalSymbols = g_clientSubscriptionMap[ws.uuid];
+        if (originalSymbols !== undefined)
+            g_clientSubscriptionMap[0].delete(originalSymbols);
+        g_clientSubscriptionMap.delete(ws.uuid);
+        for (var s in originalSymbols.entries()) {
+            var uuidSet = g_symbolSocketMap.get(s);
+            if (uuidSet.has(ws.uuid))
+                uuidSet.delete(ws.uuid);
+        }
+    }
+    
+    if (g_clientSocketMap.has(ws.uuid)){
+        g_clientSocketMap.delete(ws.uuid);
+    }
+
+}
+function getSymbolsForClientSocks(ws) {
+    return g_clientSubscriptionMap[ws.uuid];
+}
+function getGlobalSymbols() {
+    if (g_clientSubscriptionMap.has(0))
+        return Array.from(g_clientSubscriptionMap.get(0));
+    else {
+        return [];
     }
 }
 function sendSubscribeRequest(streamerLoginInfo, service, command, parameters, ws, callback) {
@@ -249,14 +408,19 @@ function sendSubscribeRequest(streamerLoginInfo, service, command, parameters, w
     }
     var strRequest = JSON.stringify(request)
     //console.log("strRequest:" + strRequest);
-    myTdSock.send(strRequest);
-    HandleResponse(callback, ws);
+    var tSock = getWebSocket(streamerLoginInfo.streamerUrl); 
+    if (tSock.readyState === WebSocket.OPEN){
+        tSock.send(strRequest);
+        HandleResponse(callback);
+    }else {
+        console.error("Cannot open socket to stream server");
+    }
 }
 
 function sendRequest(service, command, parameters,ws, callback) {
     if (g_loginStatus === 30){
-        console.log("login status is 30");
-        LoginEx().then(function(res){
+        console.log("login status is ", g_loginStatus);
+        LoginEx(ws.uuid).then(function(res){
             sendSubscribeRequest(streamerLoginInfo, service, command, parameters, ws, callback);
         })
     }else {
@@ -273,12 +437,14 @@ function SubscribeNews(symbols, ws, callback) {
     var request = sendRequest("NEWS_HEADLINE", "SUBS", {
         "keys": symbols, "fields": "0,1,2,3,4"
     }, ws, callback);
-    myTdSock.send(JSON.stringify(request));
+    getWebSocket(ws.uuid).send(JSON.stringify(request));
 }
 function SubscribeQuote(symbol, ws, callback) {
     console.log("subscribe to symbol" + symbol);
+    putSubscriptionMap(ws, symbol);
+    var totalSymbols = getGlobalSymbols();
     sendRequest("QUOTE", "SUBS", {
-        "keys": convertJsonListToString(symbol),
+        "keys": convertJsonListToString(totalSymbols),
         "fields": "0,1,2,3,4,8,11,12,13,29"
     }, ws, callback);
     
@@ -286,6 +452,7 @@ function SubscribeQuote(symbol, ws, callback) {
 
 function UnsubscribeQuote(symbols, ws, callback) {
     console.log("unscribe to symbol" + symbols);
+    removeSubscriptions(ws.uuid);
     sendRequest("QUOTE", "UNSUBS", {
         "keys": convertJsonListToString(symbols),
         "fields": "0,1,2,3,4,8,11,12,13,29"

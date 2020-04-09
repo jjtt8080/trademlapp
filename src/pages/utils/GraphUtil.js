@@ -106,6 +106,42 @@ function ConvertOptionData(input, expDate, optionType, fieldNames) {
     }
     return data;
 }
+function ConvertVictoryStockData(input) {
+    var inputObj = input;
+    var data = [];
+    if (inputObj.h === undefined) {
+        return {};
+    }
+    for (var i = 0; i < inputObj.h.length; ++i) {
+        var t = inputObj.t[i];
+        var dateO = new Date(t*1000);
+        //console.log("dateO", dateO);
+        var d = '';
+        var originalD =  (dateO.getYear() +1900)+ '/' + (dateO.getMonth()+1) + '/' +  (dateO.getDate()+1);
+        data[i] = {x: dateO, open: inputObj.o[i], close: inputObj.c[i], high: inputObj.h[i], low: inputObj.l[i], 
+                label: 'o:'+ inputObj.o[i]+',c:' + inputObj.c[i] +'h:' + inputObj.h[i] + ',l:' + inputObj.l[i] };
+      }
+      return {data};
+}
+function ConvertVictoryPredictions(input, stock_data) {
+    var inputObj = input;
+    var predictions = [];
+    if (inputObj.pred_close === undefined) {
+        return {};
+    }
+    for (var i = 0; i < inputObj.pred_close.length; ++i) {
+        var t = inputObj.date[i];
+        var dateO = new Date(t*1000);
+        //console.log("dateO", dateO);
+        var d = '';
+        var originalD =  (dateO.getYear() +1900)+ '/' + (dateO.getMonth()+1) + '/' +  (dateO.getDate()+1);
+        predictions[i] = {x: dateO, y: inputObj.pred_close[i], label: originalD};
+      }
+      return {predictions};
+
+}
 export {ExtractExprDays}
 export {ConvertData};
 export {ConvertOptionData};
+export {ConvertVictoryStockData};
+export {ConvertVictoryPredictions};

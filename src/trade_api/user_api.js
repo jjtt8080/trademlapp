@@ -1,10 +1,12 @@
 const fs = require('fs')
 const os = require('os')
 const socket_const = require('../sockets/socket_constants')
-
+const process = require("dotenv");
+var homedir = String('/home/jane/');
 function GetWatchListByName(watch_list_name) {
     if (watch_list_name !== '') {
-        var watchlistFileName = '/home/jane/webapp/trademlapp/data/' + watch_list_name + '.json';
+        
+        var watchlistFileName = homedir + '/webapp/trademlapp/data/' + watch_list_name + '.json';
         if (fs.existsSync(watchlistFileName)) {
             var watchFileObj = fs.readFileSync(watchlistFileName);
             var jsonObj = JSON.parse(watchFileObj)
@@ -18,7 +20,7 @@ function GetWatchListByName(watch_list_name) {
     return resultObj;
 }
 function GetWatchLists() {
-    var watchlistFileName = '/home/jane/webapp/trademlapp/data/watch_list.json';
+    var watchlistFileName = homedir + 'webapp/trademlapp/data/watch_list.json';
     var watchFileObj = fs.readFileSync(watchlistFileName);
     var jsonObj = JSON.parse(watchFileObj)
     //var strJsonObj = JSON.stringify(jsonObj);
@@ -83,6 +85,30 @@ module.exports = {
        }else {
            console.error("Unknown type specified in user_api", type)
        }
+   },
+   ModelFunc: function(type, params, ws, callback) {
+    if (type === socket_const.MODEL_PREDICTIONS){
+        try {
+            var symbol = params.symbol;
+            var date = params.date;
+            var predictions_dir = homedir + "/webapp/trademlapp//data/predictions";
+            var fileName = predictions_dir + "/" + symbol + "_" + date;
+            console.log("opening", fileName);
+            var predictedObj = fs.readFileSync(fileName);
+            var predictedJson = JSON.parse(predictedObj);
+            var resultObj = {type: socket_const.MODEL_PREDICTIONS, result: predictedJson};
+            console.log("resultObj for modelfunc,", JSON.stringify(resultObj));
+            callback(ws, JSON.stringify(resultObj));
+        }catch (Error) {
+            console.error(os.error);
+            var result = {type: socket_const.ARG_ERROR, result: "Can't find predictionv"};
+            callback(ws, JSON.stringify(result));
+        }
+    }else {
+        console.error("Unknown type specified in user_api", type)
+    }
    }
+
 }
 
+ 
